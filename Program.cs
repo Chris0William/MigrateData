@@ -12,6 +12,7 @@ namespace MigrateData
     {
         static void Main(string[] args)
         {
+            //雪花id注册
             var workerId = ushort.Parse("1");
             YitIdHelper.SetIdGenerator(new IdGeneratorOptions { WorkerId = workerId });
 
