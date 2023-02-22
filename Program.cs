@@ -22,7 +22,7 @@ namespace MigrateData
                 //SqlSugarUtils.GenderEntity();
 
                 //单一方法执行
-                new LCPManager().MigrateOrgAndUserAndEmp();
+                new LCPManager().MigragteCheckfuncAndCheckflowAndChecker();
 
 
                 //执行命名空间中MigrateData.MigrateManager的所有方法

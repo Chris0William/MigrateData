@@ -47,7 +47,7 @@ namespace MigrateData.Utils
         /// 将组织数据添加到新库中
         /// </summary>
         /// <param name="StaffInfo"></param>
-        public static long AddOrgInNewDB(T_HR_Department1 department,long departmentId)
+        public static long AddOrgInNewDB(T_HR_Department1 department, long departmentId)
         {
 
             long org1Id = Yitter.IdGenerator.YitIdHelper.NextId();
@@ -212,7 +212,36 @@ namespace MigrateData.Utils
             userEntity.TenantId = tenantId;
             SqlSugarUtils.db.Insertable(userEntity).ExecuteCommand();
         }
-    
-        
+
+
+        /// <summary>
+        /// 将审核功能添加到新库中
+        /// </summary>
+        /// <param name="StaffInfo"></param>
+        public static void AddCheckFuncInNewDB(List<T_CH_Checkfunc> oldCheckFuncList, List<t_sys_checkfunc> newCheckFunkAfterTaskList)
+        {
+            List<t_sys_checkfunc> checkFuncList = new();
+            foreach (var item in oldCheckFuncList)
+            {
+                t_sys_checkfunc checkFunkInfo = new();
+                checkFunkInfo.Id = item.ID;
+                checkFunkInfo.name = item.Name;
+                checkFunkInfo.description = item.Description;
+                checkFunkInfo.disable = item.Disable;
+                checkFunkInfo.AfterTask = newCheckFunkAfterTaskList.Where(it => it.name == item.Name).Select(it => it.AfterTask).First();
+
+                string[] oldCCPeoples = item.CcPeople != null ? item.CcPeople.Split(",") : new string[] { };
+                string newCCPeoples = null;
+                foreach (var ccpeople in oldCCPeoples)
+                {
+                    var jobNum = SqlSugarUtils.db.QueryableWithAttr<T_PE_Users>().Where(it => it.UserID == ccpeople).Select(it => it.EmployeeID).First();
+                    newCCPeoples += string.IsNullOrWhiteSpace(jobNum) ? "" : ","+jobNum ;
+                }
+                checkFunkInfo.CcPeople = newCCPeoples;
+                checkFuncList.Add(checkFunkInfo);
+            }
+            SqlSugarUtils.db.Insertable(checkFuncList).ExecuteCommand();
+            Console.WriteLine("成功条数：" + checkFuncList.Count);
+        }
     }
 }

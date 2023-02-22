@@ -35,7 +35,7 @@ namespace MigrateData.MigrateManager
                 //清除新库员工表数据
                 SqlSugarUtils.db.Deleteable<sys_emp>().Where(it => it.JobNum != 0).ExecuteCommandAsync();
                 ////清除新库用户表数据
-                SqlSugarUtils.db.Deleteable<sys_user>().Where(it => it.JobNum != 0 ).ExecuteCommandAsync();
+                SqlSugarUtils.db.Deleteable<sys_user>().Where(it => it.JobNum != 0).ExecuteCommandAsync();
 
                 //查询旧库组织表数据
                 var department1 = SqlSugarUtils.db.QueryableWithAttr<T_HR_Department1>()
@@ -43,7 +43,7 @@ namespace MigrateData.MigrateManager
                     .Includes(it => it.Department2, it => it.Department3)
                     .ToList();
 
-                long departmentId=LCPUtils.AddOrgInNewDB();
+                long departmentId = LCPUtils.AddOrgInNewDB();
                 //从组织根部向下建立结构插入数据
                 foreach (var item in department1)
                 {
@@ -87,8 +87,39 @@ namespace MigrateData.MigrateManager
             catch (Exception)
             {
                 SqlSugarUtils.db.Ado.RollbackTran();
+                Console.WriteLine("迁移sysOrg、sysEmp、sysUser表失败");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// 迁移审核功能、审核流程、审核人
+        /// </summary>
+        public void MigragteCheckfuncAndCheckflowAndChecker()
+        {
+            Console.WriteLine("开始迁移t_sys_checkfunc、t_sys_checkflow、t_sys_Checkfunc_Checkflow_relation、t_sys_checker表...");
+            try
+            {
+                SqlSugarUtils.db.Ado.BeginTran();
+                //删除新库的审核功能
+                var newCheckFunkAfterTaskList = SqlSugarUtils.db.Queryable<t_sys_checkfunc>().ToList();
+                SqlSugarUtils.db.Deleteable<t_sys_checkfunc>().ExecuteCommand();
+                //获取旧库审核功能
+                var checkfuncList = SqlSugarUtils.db.QueryableWithAttr<T_CH_Checkfunc>().ToList();
+                //新增新库的审核功能
+                LCPUtils.AddCheckFuncInNewDB(checkfuncList, newCheckFunkAfterTaskList);
+
+                SqlSugarUtils.db.Ado.CommitTran();
+            }
+            catch (Exception)
+            {
+
+                SqlSugarUtils.db.Ado.RollbackTran();
+                Console.WriteLine("迁移sysOrg、sysEmp、sysUser表失败");
+                throw;
+            }
+
+
         }
 
         /// <summary>
