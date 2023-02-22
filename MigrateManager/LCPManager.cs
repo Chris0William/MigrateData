@@ -35,7 +35,7 @@ namespace MigrateData.MigrateManager
                 //清除新库员工表数据
                 SqlSugarUtils.db.Deleteable<sys_emp>().Where(it => it.JobNum != 0).ExecuteCommandAsync();
                 ////清除新库用户表数据
-                //SqlSugarUtils.db.Deleteable<sys_user>().Where(it => it.JobNum != "0").ExecuteCommandAsync();
+                SqlSugarUtils.db.Deleteable<sys_user>().Where(it => it.JobNum != 0 ).ExecuteCommandAsync();
 
                 //查询旧库组织表数据
                 var department1 = SqlSugarUtils.db.QueryableWithAttr<T_HR_Department1>()
@@ -43,13 +43,14 @@ namespace MigrateData.MigrateManager
                     .Includes(it => it.Department2, it => it.Department3)
                     .ToList();
 
+                long departmentId=LCPUtils.AddOrgInNewDB();
                 //从组织根部向下建立结构插入数据
                 foreach (var item in department1)
                 {
                     //查询一级组织底下的员工信息
                     item.staffEntities = SqlSugarUtils.db.QueryableWithAttr<T_HR_Staff>().Includes(it => it.userEntity).Where(it => it.StaffID != "0" && it.ID1 == item.ID1 && string.IsNullOrWhiteSpace(it.ID2) && string.IsNullOrWhiteSpace(it.ID3)).ToList();
                     //新增组织
-                    long departmentId1 = LCPUtils.AddOrgInNewDB(item);
+                    long departmentId1 = LCPUtils.AddOrgInNewDB(item, departmentId);
                     //新增员工
                     LCPUtils.AddEmpInNewDB(item.staffEntities, departmentId1, item.Department1Name);
                     foreach (var item2 in item.Department2)
@@ -57,7 +58,7 @@ namespace MigrateData.MigrateManager
                         //查询二级组织底下的员工信息
                         item2.staffEntities = SqlSugarUtils.db.QueryableWithAttr<T_HR_Staff>().Includes(it => it.userEntity).Where(it => it.StaffID != "0" && it.ID2 == item2.ID2 && string.IsNullOrWhiteSpace(it.ID3)).ToList();
                         //新增组织
-                        long departmentId2 = LCPUtils.AddOrgInNewDB(item2, departmentId1);
+                        long departmentId2 = LCPUtils.AddOrgInNewDB(item2, departmentId, departmentId1);
                         //新增员工
                         LCPUtils.AddEmpInNewDB(item2.staffEntities, departmentId2, item2.Department2Name);
                         foreach (var item3 in item2.Department3)
@@ -65,7 +66,7 @@ namespace MigrateData.MigrateManager
                             //查询三级组织底下的员工信息
                             item3.staffEntities = SqlSugarUtils.db.QueryableWithAttr<T_HR_Staff>().Includes(it => it.userEntity).Where(it => it.StaffID != "0" && it.ID3 == item3.ID3).ToList();
                             //新增组织
-                            long departmentId3 = LCPUtils.AddOrgInNewDB(item3, departmentId1, departmentId2);
+                            long departmentId3 = LCPUtils.AddOrgInNewDB(item3, departmentId, departmentId1, departmentId2);
                             //新增员工
                             LCPUtils.AddEmpInNewDB(item3.staffEntities, departmentId3, item3.Department3Name);
                         }
@@ -74,6 +75,7 @@ namespace MigrateData.MigrateManager
 
                 //将旧库中所有无组织的员工单独添加
                 var NoOrgEmpList = SqlSugarUtils.db.QueryableWithAttr<T_HR_Staff>()
+                    .Includes(it => it.userEntity)
                     .Where(it => string.IsNullOrWhiteSpace(it.ID1) && string.IsNullOrWhiteSpace(it.ID2) && string.IsNullOrWhiteSpace(it.ID3))
                     .ToList();
                 //新增员工
@@ -94,7 +96,14 @@ namespace MigrateData.MigrateManager
         /// </summary>
         public void VerifyOrgAndUserAndEmp()
         {
+            var newData = SqlSugarUtils.db.Queryable<sys_user>().Select(it => it.JobNum.ToString()).ToList();
+            var oldData = SqlSugarUtils.db.QueryableWithAttr<T_PE_Users>().Select(it => it.EmployeeID).ToList();
 
+            var chayi = oldData.Except(newData);
+            foreach (var item in chayi)
+            {
+                Console.WriteLine(item);
+            }
         }
 
     }

@@ -29,7 +29,7 @@ namespace MigrateData.NewEntity
            /// Default:
            /// Nullable:True
            /// </summary>           
-           public string JobNum {get;set;}
+           public long JobNum {get;set;}
 
            /// <summary>
            /// Desc:账号
@@ -78,7 +78,7 @@ namespace MigrateData.NewEntity
            /// Default:
            /// Nullable:False
            /// </summary>           
-           public int Sex {get;set;}
+           public int? Sex {get;set;}
 
            /// <summary>
            /// Desc:邮箱

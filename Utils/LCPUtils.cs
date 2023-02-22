@@ -16,11 +16,13 @@ namespace MigrateData.Utils
         private static long createUserId = 142307070910551;
         private static string createUserName = "超级管理员";
         private static long tenantId = 142307070918780;
+
+
         /// <summary>
         /// 将组织数据添加到新库中
         /// </summary>
         /// <param name="StaffInfo"></param>
-        public static long AddOrgInNewDB(T_HR_Department1 department)
+        public static long AddOrgInNewDB()
         {
 
             long org1Id = Yitter.IdGenerator.YitIdHelper.NextId();
@@ -30,6 +32,31 @@ namespace MigrateData.Utils
                 Id = org1Id,
                 Pid = 0,
                 Pids = "[0]",
+                Name = "德尔集团",
+                Code = "Deer",
+                CreatedTime = now,
+                CreatedUserId = createUserId,
+                CreatedUserName = createUserName,
+                IsDeleted = false,
+                TenantId = tenantId,
+            };
+            SqlSugarUtils.db.Insertable(orgInfo).ExecuteCommand();
+            return org1Id;
+        }
+        /// <summary>
+        /// 将组织数据添加到新库中
+        /// </summary>
+        /// <param name="StaffInfo"></param>
+        public static long AddOrgInNewDB(T_HR_Department1 department,long departmentId)
+        {
+
+            long org1Id = Yitter.IdGenerator.YitIdHelper.NextId();
+            //新增一级组织
+            sys_org orgInfo = new()
+            {
+                Id = org1Id,
+                Pid = departmentId,
+                Pids = $"[0],[{departmentId}]",
                 Name = department.Department1Name,
                 Code = department.Department1No ?? "",
                 CreatedTime = now,
@@ -45,7 +72,7 @@ namespace MigrateData.Utils
         /// 将组织数据添加到新库中
         /// </summary>
         /// <param name="StaffInfo"></param>
-        public static long AddOrgInNewDB(T_HR_Department2 department, long departmentId1)
+        public static long AddOrgInNewDB(T_HR_Department2 department, long departmentId, long departmentId1)
         {
             long org1Id = Yitter.IdGenerator.YitIdHelper.NextId();
             //新增一级组织
@@ -53,7 +80,7 @@ namespace MigrateData.Utils
             {
                 Id = org1Id,
                 Pid = departmentId1,
-                Pids = $"[0],[{departmentId1}]]",
+                Pids = $"[0],[{departmentId}],[{departmentId1}]",
                 Name = department.Department2Name,
                 Code = department.Department2No ?? "",
                 CreatedTime = now,
@@ -69,7 +96,7 @@ namespace MigrateData.Utils
         /// 将组织数据添加到新库中
         /// </summary>
         /// <param name="StaffInfo"></param>
-        public static long AddOrgInNewDB(T_HR_Department3 department, long departmentId1, long departmentId2)
+        public static long AddOrgInNewDB(T_HR_Department3 department, long departmentId, long departmentId1, long departmentId2)
         {
             long org1Id = Yitter.IdGenerator.YitIdHelper.NextId();
             //新增一级组织
@@ -77,7 +104,7 @@ namespace MigrateData.Utils
             {
                 Id = org1Id,
                 Pid = departmentId2,
-                Pids = $"[0],[{departmentId1},[{departmentId2}]]",
+                Pids = $"[0],[{departmentId}],[{departmentId1}],[{departmentId2}]",
                 Name = department.Department3Name,
                 Code = department.Department3No ?? "",
                 CreatedTime = now,
@@ -89,7 +116,6 @@ namespace MigrateData.Utils
             SqlSugarUtils.db.Insertable(orgInfo).ExecuteCommand();
             return org1Id;
         }
-
         /// <summary>
         /// 将员工数据添加到新库中
         /// </summary>
@@ -157,6 +183,8 @@ namespace MigrateData.Utils
                 empEntity.CreatedUserName = createUserName;
                 empEntity.IsDeleted = false;
                 empEntities.Add(empEntity);
+                //添加对应的用户
+                if (item.userEntity != null) AddUserInNewDB(item.userEntity, empId);
             }
             SqlSugarUtils.db.Insertable(empEntities).ExecuteCommand();
         }
@@ -164,9 +192,27 @@ namespace MigrateData.Utils
         /// 将用户数据添加到新库中
         /// </summary>
         /// <param name="StaffInfo"></param>
-        public static void AddUserInNewDB(List<T_HR_Staff> StaffInfo)
+        public static void AddUserInNewDB(T_PE_Users staffInfo, long empId)
         {
-
+            sys_user userEntity = new();
+            userEntity.Id = empId;
+            userEntity.JobNum = staffInfo.EmployeeID.ParseToLong();
+            userEntity.Account = staffInfo.UserName;
+            userEntity.Password = StringUtils.ComputeMD5Hash(staffInfo.Password);
+            userEntity.NickName = staffInfo.Name;
+            userEntity.Name = staffInfo.Name;
+            userEntity.Birthday = staffInfo.Birthday;
+            userEntity.Email = staffInfo.Email;
+            userEntity.AdminType = 3;
+            userEntity.Status = staffInfo.Activity.Value ? 0 : 1;
+            userEntity.CreatedTime = now;
+            userEntity.CreatedUserId = createUserId;
+            userEntity.CreatedUserName = createUserName;
+            userEntity.IsDeleted = false;
+            userEntity.TenantId = tenantId;
+            SqlSugarUtils.db.Insertable(userEntity).ExecuteCommand();
         }
+    
+        
     }
 }

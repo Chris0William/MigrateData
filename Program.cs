@@ -16,18 +16,21 @@ namespace MigrateData
             var workerId = ushort.Parse("1");
             YitIdHelper.SetIdGenerator(new IdGeneratorOptions { WorkerId = workerId });
 
+            do
+            {
+                //生成实体类
+                //SqlSugarUtils.GenderEntity();
 
-            //生成实体类
-            //SqlSugarUtils.GenderEntity();
-
-            //单一方法执行
-            new LCPManager().MigrateOrgAndUserAndEmp();
+                //单一方法执行
+                new LCPManager().MigrateOrgAndUserAndEmp();
 
 
-            //执行命名空间中MigrateData.MigrateManager的所有方法
-            //ExecutAllFunction();
+                //执行命名空间中MigrateData.MigrateManager的所有方法
+                //ExecutAllFunction();
 
-            Console.ReadLine();
+                Console.ReadLine();
+            } while (true);
+
         }
 
         public static void ExecutAllFunction()
