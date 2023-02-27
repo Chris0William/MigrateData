@@ -104,10 +104,84 @@ namespace MigrateData.MigrateManager
                 //删除新库的审核功能
                 var newCheckFunkAfterTaskList = SqlSugarUtils.db.Queryable<t_sys_checkfunc>().ToList();
                 SqlSugarUtils.db.Deleteable<t_sys_checkfunc>().ExecuteCommand();
+                //删除新库的审核流程
+                SqlSugarUtils.db.Deleteable<t_sys_checkflow>().ExecuteCommand();
+                //删除新库的审核流程与审核功能关系
+                SqlSugarUtils.db.Deleteable<t_sys_Checkfunc_Checkflow_relation>().ExecuteCommand();
+                //删除新库的审核人
+                SqlSugarUtils.db.Deleteable<t_sys_checker>().ExecuteCommand();
+
+
                 //获取旧库审核功能
                 var checkfuncList = SqlSugarUtils.db.QueryableWithAttr<T_CH_Checkfunc>().ToList();
+                //获取旧库审核流程
+                var checkflowList = SqlSugarUtils.db.QueryableWithAttr<T_CH_Checkflow>().ToList();
+                //获取旧库审核流程与审核功能关系
+                var checkfuncAndCheckflowList = SqlSugarUtils.db.QueryableWithAttr<T_CH_Checkfunc_Checkflow_relation>().ToList();
+                //获取旧库审核人
+                var checkerList = SqlSugarUtils.db.QueryableWithAttr<T_CH_Checker>().ToList();
+
+
                 //新增新库的审核功能
                 LCPUtils.AddCheckFuncInNewDB(checkfuncList, newCheckFunkAfterTaskList);
+                //新增新库的审核流程
+                LCPUtils.AddCheckFlowInNewDB(checkflowList);
+                //新增新库的审核流程与审核功能关系
+                LCPUtils.AddCheckfuncAndCheckflowInNewDB(checkfuncAndCheckflowList);
+                //新增新库的审核人
+                LCPUtils.AddCheckerInNewDB(checkerList);
+
+                SqlSugarUtils.db.Ado.CommitTran();
+            }
+            catch (Exception)
+            {
+
+                SqlSugarUtils.db.Ado.RollbackTran();
+                Console.WriteLine("迁移sysOrg、sysEmp、sysUser表失败");
+                throw;
+            }
+
+
+        }
+
+        /// <summary>
+        /// 迁移资产申请、资产采购、资产入库、物料明细
+        /// </summary>
+        public void MigragteApplyFixedAssetAndPurchaseFixedAssetAndStorageFixedAssetAndJm()
+        {
+            Console.WriteLine("开始迁移t_cg_ApplyFixedAsset、t_cg_PurchaseFixedAsset、t_cg_StorageFixedAsset、t_cg_jm...");
+            try
+            {
+                SqlSugarUtils.db.Ado.BeginTran();
+                //删除新库的资产申请
+                SqlSugarUtils.db.Deleteable<t_cg_ApplyFixedAsset>().ExecuteCommand();
+                //删除新库的资产采购
+                SqlSugarUtils.db.Deleteable<t_cg_PurchaseFixedAsset>().ExecuteCommand();
+                //删除新库的资产入库
+                SqlSugarUtils.db.Deleteable<t_cg_StorageFixedAsset>().ExecuteCommand();
+                //删除新库的物料明细
+                SqlSugarUtils.db.Deleteable<t_cg_jm>().ExecuteCommand();
+
+                //获取旧库资产申请
+                var applyFixedAssetList = SqlSugarUtils.db.QueryableWithAttr<T_GM_ApplyFixedAsset>().ToList();
+                var applyIndirectList = SqlSugarUtils.db.QueryableWithAttr<T_GM_ApplyIndirect>().ToList();
+                //获取旧库资产采购
+                var purchaseFixedAssetList = SqlSugarUtils.db.QueryableWithAttr<T_GM_PurchaseFixedAsset>().ToList();
+                var purchaseIndirectList = SqlSugarUtils.db.QueryableWithAttr<T_GM_PurchaseIndirect>().ToList();
+                //获取旧库资产入库
+                var storageFixedAssetList = SqlSugarUtils.db.QueryableWithAttr<T_GM_StorageFixedAsset>().ToList();
+                //获取旧库物料明细
+                var jmList = SqlSugarUtils.db.QueryableWithAttr<T_GM_JM>().ToList();
+
+
+                //新增新库的资产申请
+                LCPUtils.AddApplyFixedAsseInNewDB(applyFixedAssetList, applyIndirectList);
+                //新增新库的资产采购
+                LCPUtils.AddPurchaseFixedAssetInNewDB(purchaseFixedAssetList, purchaseIndirectList);
+                //新增新库的审核入库
+                LCPUtils.AddStorageFixedAssetInNewDB(storageFixedAssetList);
+                //新增新库的物料明细
+                LCPUtils.AddJMInNewDB(jmList);
 
                 SqlSugarUtils.db.Ado.CommitTran();
             }

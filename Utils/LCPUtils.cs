@@ -11,12 +11,14 @@ namespace MigrateData.Utils
 {
     public static class LCPUtils
     {
-
+        #region 静态变量
         private static DateTime now = DateTime.Now;
         private static long createUserId = 142307070910551;
         private static string createUserName = "超级管理员";
         private static long tenantId = 142307070918780;
+        #endregion
 
+        #region 迁移组织、员工、用户
 
         /// <summary>
         /// 将组织数据添加到新库中
@@ -213,6 +215,10 @@ namespace MigrateData.Utils
             SqlSugarUtils.db.Insertable(userEntity).ExecuteCommand();
         }
 
+        #endregion
+
+
+        #region 迁移审核功能、审核流程、审核人
 
         /// <summary>
         /// 将审核功能添加到新库中
@@ -235,13 +241,300 @@ namespace MigrateData.Utils
                 foreach (var ccpeople in oldCCPeoples)
                 {
                     var jobNum = SqlSugarUtils.db.QueryableWithAttr<T_PE_Users>().Where(it => it.UserID == ccpeople).Select(it => it.EmployeeID).First();
-                    newCCPeoples += string.IsNullOrWhiteSpace(jobNum) ? "" : ","+jobNum ;
+                    newCCPeoples += string.IsNullOrWhiteSpace(jobNum) ? "" : "," + jobNum;
                 }
                 checkFunkInfo.CcPeople = newCCPeoples;
+                checkFunkInfo.CreatedTime = now;
+                checkFunkInfo.CreatedUserId = createUserId;
+                checkFunkInfo.CreatedUserName = createUserName;
+                checkFunkInfo.IsDeleted = false;
                 checkFuncList.Add(checkFunkInfo);
             }
             SqlSugarUtils.db.Insertable(checkFuncList).ExecuteCommand();
-            Console.WriteLine("成功条数：" + checkFuncList.Count);
+            Console.WriteLine("审核功能成功条数：" + checkFuncList.Count);
         }
+
+        /// <summary>
+        /// 将审核流程添加到新库中
+        /// </summary>
+        /// <param name="StaffInfo"></param>
+        public static void AddCheckFlowInNewDB(List<T_CH_Checkflow> oldCheckFlowList)
+        {
+            List<t_sys_checkflow> checkFlowList = new();
+            foreach (var item in oldCheckFlowList)
+            {
+                t_sys_checkflow checkFlowInfo = new();
+                checkFlowInfo.Id = item.ID;
+                checkFlowInfo.name = item.Name;
+                checkFlowInfo.Time_limit = item.Time_limit;
+                checkFlowInfo.disable = item.Disable;
+                checkFlowInfo.description = item.Description;
+                checkFlowInfo.CreatedTime = item.CreatorTime;
+                checkFlowInfo.CreatedUserId = createUserId;
+                checkFlowInfo.CreatedUserName = createUserName;
+                checkFlowInfo.IsDeleted = false;
+                checkFlowList.Add(checkFlowInfo);
+            }
+            SqlSugarUtils.db.Insertable(checkFlowList).ExecuteCommand();
+            Console.WriteLine("审核流程成功条数：" + checkFlowList.Count);
+        }
+
+        /// <summary>
+        /// 将审核流程与审核关系添加到新库中
+        /// </summary>
+        /// <param name="StaffInfo"></param>
+        public static void AddCheckfuncAndCheckflowInNewDB(List<T_CH_Checkfunc_Checkflow_relation> oldCheckfuncAndCheckflowList)
+        {
+            List<t_sys_Checkfunc_Checkflow_relation> checkfuncAndCheckflowList = new();
+            foreach (var item in oldCheckfuncAndCheckflowList)
+            {
+                t_sys_Checkfunc_Checkflow_relation checkfuncAndCheckflowInfo = new();
+                checkfuncAndCheckflowInfo.Id = item.ID;
+                checkfuncAndCheckflowInfo.Check_funcID = item.Check_funcID;
+                checkfuncAndCheckflowInfo.Check_flowID = item.Check_flowID;
+                checkfuncAndCheckflowList.Add(checkfuncAndCheckflowInfo);
+            }
+            SqlSugarUtils.db.Insertable(checkfuncAndCheckflowList).ExecuteCommand();
+            Console.WriteLine("审核流程与审核关系成功条数：" + checkfuncAndCheckflowList.Count);
+        }
+
+        /// <summary>
+        /// 将审核人添加到新库中
+        /// </summary>
+        /// <param name="StaffInfo"></param>
+        public static void AddCheckerInNewDB(List<T_CH_Checker> oldCheckerList)
+        {
+            List<t_sys_checker> checkerList = new();
+            foreach (var item in oldCheckerList)
+            {
+                t_sys_checker checkerInfo = new();
+                checkerInfo.Id = item.ID;
+                checkerInfo.CheckerID = item.CheckerID;
+                checkerInfo.CheckFlowID = item.CheckFlowID;
+                checkerInfo.lvl1 = item.lvl1;
+                checkerInfo.lvl2 = item.lvl2;
+                checkerList.Add(checkerInfo);
+            }
+            SqlSugarUtils.db.Insertable(checkerList).ExecuteCommand();
+            Console.WriteLine("审核人成功条数：" + checkerList.Count);
+        }
+
+        #endregion
+
+
+        #region 迁移资产申请、资产采购、资产入库、物料明细
+
+        /// <summary>
+        /// 将资产申请添加到新库中
+        /// </summary>
+        /// <param name="StaffInfo"></param>
+        public static void AddApplyFixedAsseInNewDB(List<T_GM_ApplyFixedAsset> oldApplyFixedAssetList, List<T_GM_ApplyIndirect> oldApplyIndirectList)
+        {
+            List<t_cg_ApplyFixedAsset> applyFixedAssetList = new();
+            foreach (var item in oldApplyFixedAssetList)
+            {
+                if (long.TryParse(item.Operator, out _))
+                {
+                    var empInfo = SqlSugarUtils.db.Queryable<sys_emp>().Where(it => it.JobNum == long.Parse(item.Operator)).First();
+                    if (empInfo != null)
+                    {
+                        t_cg_ApplyFixedAsset applyFixedAssetInfo = new();
+                        applyFixedAssetInfo.Id = item.GID;
+                        applyFixedAssetInfo.ApplyNo = item.ApplyNo;
+                        applyFixedAssetInfo.ApplicantName = item.Applicant;
+                        applyFixedAssetInfo.ApplicantSector = item.ApplicantSector;
+                        applyFixedAssetInfo.No_Date = item.No_Date;
+                        applyFixedAssetInfo.AuditProcess = item.AuditProcess;
+                        applyFixedAssetInfo.Company = item.Company;
+                        applyFixedAssetInfo.status = item.Status;
+                        applyFixedAssetInfo.description = item.Remark;
+                        applyFixedAssetInfo.UseMan = item.UseMan;
+                        applyFixedAssetInfo.ApplyType = "固定资产申请";
+                        applyFixedAssetInfo.ApplicantId = item.Operator;
+                        applyFixedAssetInfo.ProjectNo = item.ProjectNo;
+                        applyFixedAssetInfo.CreatedTime = item.OperateTime;
+                        applyFixedAssetInfo.CreatedUserId = empInfo.Id;
+                        applyFixedAssetInfo.CreatedUserName = empInfo.StaffName;
+                        applyFixedAssetInfo.IsDeleted = false;
+                        applyFixedAssetList.Add(applyFixedAssetInfo);
+                    }
+                }
+            }
+
+            foreach (var item in oldApplyIndirectList)
+            {
+                if (long.TryParse(item.Operator, out _))
+                {
+                    var empInfo = SqlSugarUtils.db.Queryable<sys_emp>().Where(it => it.JobNum == long.Parse(item.Operator)).First();
+                    if (empInfo != null)
+                    {
+                        t_cg_ApplyFixedAsset applyFixedAssetInfo = new();
+                        applyFixedAssetInfo.Id = item.GID;
+                        applyFixedAssetInfo.ApplyNo = item.ApplyIndirNo;
+                        applyFixedAssetInfo.ApplicantName = item.ApplyMan;
+                        applyFixedAssetInfo.ApplicantSector = item.ApplySector;
+                        applyFixedAssetInfo.No_Date = item.OperateTime;
+                        applyFixedAssetInfo.AuditProcess = item.CheckProcess;
+                        applyFixedAssetInfo.status = item.ApplyMstate;
+                        applyFixedAssetInfo.PurchaseType = item.PurchaseType;
+                        applyFixedAssetInfo.description = item.Remark;
+                        applyFixedAssetInfo.UseMan = item.ReceiveMan;
+                        applyFixedAssetInfo.ApplyType = "间接资产申请";
+                        applyFixedAssetInfo.ApplicantId = item.Operator;
+                        applyFixedAssetInfo.CreatedTime = item.OperateTime;
+                        applyFixedAssetInfo.CreatedUserId = empInfo.Id;
+                        applyFixedAssetInfo.CreatedUserName = empInfo.StaffName;
+                        applyFixedAssetInfo.IsDeleted = false;
+                        applyFixedAssetList.Add(applyFixedAssetInfo);
+                    }
+                }
+            }
+            SqlSugarUtils.db.Insertable(applyFixedAssetList).ExecuteCommand();
+            Console.WriteLine("资产申请成功条数：" + applyFixedAssetList.Count);
+        }
+
+        /// <summary>
+        /// 将资产采购添加到新库中
+        /// </summary>
+        /// <param name="StaffInfo"></param>
+        public static void AddPurchaseFixedAssetInNewDB(List<T_GM_PurchaseFixedAsset> oldPurchaseFixedAssetList, List<T_GM_PurchaseIndirect> oldPurchaseIndirectList)
+        {
+            List<t_cg_PurchaseFixedAsset> purchaseFixedAssetList = new();
+            foreach (var item in oldPurchaseFixedAssetList)
+            {
+                if (long.TryParse(item.Operator, out _))
+                {
+                    var empInfo = SqlSugarUtils.db.Queryable<sys_emp>().Where(it => it.JobNum == long.Parse(item.Operator)).First();
+                    if (empInfo != null)
+                    {
+                        t_cg_PurchaseFixedAsset purchaseFixedAssetInfo = new();
+                        purchaseFixedAssetInfo.Id = item.GID;
+                        purchaseFixedAssetInfo.PurchaseFNo = item.PurchaseFNo;
+                        purchaseFixedAssetInfo.ApplyId = item.ApplyNo;
+                        purchaseFixedAssetInfo.SupplierID = item.SupplierID;
+                        purchaseFixedAssetInfo.PurchasePrice = item.PurchasePrice;
+                        purchaseFixedAssetInfo.OrderType = item.OrderType;
+                        purchaseFixedAssetInfo.No_Date = item.No_Date;
+                        purchaseFixedAssetInfo.AuditProcess = item.AuditProcess;
+                        purchaseFixedAssetInfo.Status = item.Status;
+                        purchaseFixedAssetInfo.PurchaseType = "固定资产采购";
+                        purchaseFixedAssetInfo.description = item.Remark;
+                        purchaseFixedAssetInfo.Address = item.Address;
+                        purchaseFixedAssetInfo.Tax = item.Tax;
+                        purchaseFixedAssetInfo.Company = item.Company;
+                        purchaseFixedAssetInfo.Id = item.GID;
+                        purchaseFixedAssetInfo.CreatedTime = item.OperateTime;
+                        purchaseFixedAssetInfo.CreatedUserId = empInfo.Id;
+                        purchaseFixedAssetInfo.CreatedUserName = empInfo.StaffName;
+                        purchaseFixedAssetInfo.IsDeleted = false;
+                        purchaseFixedAssetList.Add(purchaseFixedAssetInfo);
+                    }
+                }
+            }
+
+            foreach (var item in oldPurchaseIndirectList)
+            {
+                if (long.TryParse(item.Operator, out _))
+                {
+                    var empInfo = SqlSugarUtils.db.Queryable<sys_emp>().Where(it => it.JobNum == long.Parse(item.Operator)).First();
+                    if (empInfo != null)
+                    {
+                        t_cg_PurchaseFixedAsset purchaseFixedAssetInfo = new();
+                        purchaseFixedAssetInfo.Id = item.GID;
+                        purchaseFixedAssetInfo.PurchaseFNo = item.PurchaseINo;
+                        purchaseFixedAssetInfo.ApplyId = item.ApplyNo;
+                        purchaseFixedAssetInfo.SupplierID = "00000";
+                        purchaseFixedAssetInfo.PurchasePrice = item.PurchasePrice;
+                        purchaseFixedAssetInfo.No_Date = item.OperateTime;
+                        purchaseFixedAssetInfo.AuditProcess = item.AuditProcess;
+                        purchaseFixedAssetInfo.Status = item.Status;
+                        purchaseFixedAssetInfo.PurchaseType = "间接资产采购";
+                        purchaseFixedAssetInfo.description = item.Remark;
+                        purchaseFixedAssetInfo.Tax = item.Tax;
+                        purchaseFixedAssetInfo.Id = item.GID;
+                        purchaseFixedAssetInfo.CreatedTime = item.OperateTime;
+                        purchaseFixedAssetInfo.CreatedUserId = empInfo.Id;
+                        purchaseFixedAssetInfo.CreatedUserName = empInfo.StaffName;
+                        purchaseFixedAssetInfo.IsDeleted = false;
+                        purchaseFixedAssetList.Add(purchaseFixedAssetInfo);
+                    }
+                }
+            }
+            SqlSugarUtils.db.Insertable(purchaseFixedAssetList).ExecuteCommand();
+            Console.WriteLine("资产采购成功条数：" + purchaseFixedAssetList.Count);
+        }
+
+        /// <summary>
+        /// 将资产入库添加到新库中
+        /// </summary>
+        /// <param name="StaffInfo"></param>
+        public static void AddStorageFixedAssetInNewDB(List<T_GM_StorageFixedAsset> oldStorageFixedAssetList)
+        {
+            List<t_cg_StorageFixedAsset> storageFixedAssetList = new();
+            foreach (var item in oldStorageFixedAssetList)
+            {
+                if (long.TryParse(item.Operator, out _))
+                {
+                    var empInfo = SqlSugarUtils.db.Queryable<sys_emp>().Where(it => it.JobNum == long.Parse(item.Operator)).First();
+                    if (empInfo != null)
+                    {
+                        t_cg_StorageFixedAsset storageFixedAssetInfo = new();
+                        storageFixedAssetInfo.Id = item.GID;
+                        storageFixedAssetInfo.StorageNo = item.StorageNo;
+                        storageFixedAssetInfo.PFAGID = item.PFAGID;
+                        storageFixedAssetInfo.WarehouseID = item.WarehouseID;
+                        storageFixedAssetInfo.StorageType = item.StorageType;
+                        storageFixedAssetInfo.No_Date = item.No_Date;
+                        storageFixedAssetInfo.AuditProcess = item.AuditProcess;
+                        storageFixedAssetInfo.Status = item.Status;
+                        storageFixedAssetInfo.description = item.Remark;
+                        storageFixedAssetInfo.Enclosure = item.Enclosure;
+                        storageFixedAssetInfo.CreatedTime = item.OperateTime;
+                        storageFixedAssetInfo.CreatedUserId = empInfo.Id;
+                        storageFixedAssetInfo.CreatedUserName = empInfo.StaffName;
+                        storageFixedAssetInfo.IsDeleted = false;
+                        storageFixedAssetList.Add(storageFixedAssetInfo);
+                    }
+                }
+            }
+            SqlSugarUtils.db.Insertable(storageFixedAssetList).ExecuteCommand();
+            Console.WriteLine("资产入库成功条数：" + storageFixedAssetList.Count);
+        }
+
+        /// <summary>
+        /// 将物料明细添加到新库中
+        /// </summary>
+        /// <param name="StaffInfo"></param>
+        public static void AddJMInNewDB(List<T_GM_JM> oldJMList)
+        {
+            List<t_cg_jm> jmList = new();
+            foreach (var item in oldJMList)
+            {
+
+                t_cg_jm jmInfo = new();
+                jmInfo.Id = (int)item.UID;
+                jmInfo.Name = item.Name;
+                jmInfo.Type = item.Type;
+                jmInfo.Price = item.Price;
+                jmInfo.Size = item.Size;
+                jmInfo.Num = item.Num;
+                jmInfo.CurrentNum = SqlSugarUtils.db.QueryableWithAttr<T_GM_JMTemp>().Where(it => it.IdentifyID == item.IdentifyID && it.Remark == item.Remark).Select(it => it.Num).First();
+                jmInfo.FinalNum = SqlSugarUtils.db.QueryableWithAttr<T_GM_JMBackup>().Where(it => it.IdentifyID == item.IdentifyID && it.Remark == item.Remark).Select(it => it.Num).First();
+                jmInfo.Unit = item.Unit;
+                jmInfo.Remark = item.Remark;
+                jmInfo.Extra = item.Extra;
+                jmInfo.Number = item.Number;
+                jmInfo.Brand = item.Brand;
+                jmInfo.IsDeleted = false;
+                jmInfo.IdentifyID = item.IdentifyID;
+                jmList.Add(jmInfo);
+
+            }
+            SqlSugarUtils.db.Insertable(jmList).ExecuteCommand();
+            Console.WriteLine("物料明细成功条数：" + jmList.Count);
+        }
+        #endregion
+
+
     }
 }
